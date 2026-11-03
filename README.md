@@ -174,7 +174,3 @@ A aplicação roda por padrão na porta **8085** (evitando conflitos com a porta
 
 ---
 
-## 👥 Integrantes do Grupo (FATEC)
-- *Nome do Aluno 1* — RA: *00000000000*
-- *Nome do Aluno 2* — RA: *00000000000*
-- *Nome do Aluno 3* — RA: *00000000000*
