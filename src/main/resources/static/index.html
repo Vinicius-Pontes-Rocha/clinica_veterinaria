@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clínica Veterinária FATEC - Painel de Controle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <!-- Topbar -->
+    <header class="bg-indigo-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-paw text-3xl text-amber-300"></i>
+                <div>
+                    <h1 class="text-2xl font-bold">Clínica Veterinária FATEC</h1>
+                    <p class="text-xs text-indigo-200">Spring Boot 3 + Hibernate JPA + Lombok + Banco Relacional H2</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="/h2-console" target="_blank" class="bg-amber-400 hover:bg-amber-500 text-indigo-950 font-semibold px-4 py-2 rounded-lg text-sm shadow transition flex items-center gap-2">
+                    <i class="fa-solid fa-database"></i> Abrir H2 Console
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Badges dos Requisitos -->
+    <section class="max-w-7xl mx-auto px-4 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="p-3 bg-purple-100 text-purple-700 rounded-lg"><i class="fa-solid fa-sitemap text-xl"></i></div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900">1. Herança (Extensão)</h3>
+                    <p class="text-xs text-slate-500">Pessoa &rarr; Tutor / Vet | Animal &rarr; Cão / Gato</p>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="p-3 bg-blue-100 text-blue-700 rounded-lg"><i class="fa-solid fa-link text-xl"></i></div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900">2. Cardinalidade 1 : N</h3>
+                    <p class="text-xs text-slate-500">Tutor (1) possui Animais (N)</p>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="p-3 bg-emerald-100 text-emerald-700 rounded-lg"><i class="fa-solid fa-network-wired text-xl"></i></div>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900">3. Cardinalidade N : N</h3>
+                    <p class="text-xs text-slate-500">Veterinário (N) &harr; Especialidade (N)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Navegação de Abas -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <div class="flex border-b border-slate-200 space-x-2 mb-6 overflow-x-auto">
+            <button onclick="switchTab('tutores')" id="tab-tutores" class="tab-btn px-5 py-3 font-semibold text-sm border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2">
+                <i class="fa-solid fa-user"></i> Tutores & Animais (1:N)
+            </button>
+            <button onclick="switchTab('veterinarios')" id="tab-veterinarios" class="tab-btn px-5 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-user-doctor"></i> Veterinários & Especialidades (N:N)
+            </button>
+            <button onclick="switchTab('especialidades')" id="tab-especialidades" class="tab-btn px-5 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-stethoscope"></i> Especialidades
+            </button>
+            <button onclick="switchTab('api')" id="tab-api" class="tab-btn px-5 py-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-code"></i> Rotas REST (JSON)
+            </button>
+        </div>
+
+        <!-- ABA 1: TUTORES & ANIMAIS -->
+        <section id="content-tutores" class="tab-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Tutores Cadastrados e seus Pets (1:N)</h2>
+                <button onclick="abrirModalTutor()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 shadow transition">
+                    <i class="fa-solid fa-plus"></i> Novo Tutor
+                </button>
+            </div>
+            <div id="lista-tutores" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-6 text-center text-slate-400">Carregando tutores...</div>
+            </div>
+        </section>
+
+        <!-- ABA 2: VETERINÁRIOS & ESPECIALIDADES -->
+        <section id="content-veterinarios" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Corpo Clínico & Especialidades (N:N)</h2>
+                <button onclick="abrirModalVet()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 shadow transition">
+                    <i class="fa-solid fa-plus"></i> Novo Veterinário
+                </button>
+            </div>
+            <div id="lista-veterinarios" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-6 text-center text-slate-400">Carregando veterinários...</div>
+            </div>
+        </section>
+
+        <!-- ABA 3: ESPECIALIDADES -->
+        <section id="content-especialidades" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-slate-800">Especialidades Médicas</h2>
+                <button onclick="abrirModalEsp()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2 shadow transition">
+                    <i class="fa-solid fa-plus"></i> Nova Especialidade
+                </button>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase">
+                        <tr>
+                            <th class="p-4">ID</th>
+                            <th class="p-4">Nome</th>
+                            <th class="p-4">Descrição</th>
+                            <th class="p-4 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-especialidades" class="divide-y divide-slate-100 text-sm">
+                        <tr><td colspan="4" class="p-4 text-center text-slate-400">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ABA 4: ROTAS REST -->
+        <section id="content-api" class="tab-content hidden">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800 mb-2">Testador Direto de Rotas REST</h2>
+                <p class="text-sm text-slate-500 mb-6">Clique nos links abaixo para inspecionar os retornos JSON puros gerados pelos Controllers do Spring Boot:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <a href="/api/tutores" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg flex justify-between items-center font-mono text-sm text-indigo-700">
+                        <span>GET /api/tutores</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                    <a href="/api/veterinarios" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg flex justify-between items-center font-mono text-sm text-indigo-700">
+                        <span>GET /api/veterinarios</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                    <a href="/api/especialidades" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg flex justify-between items-center font-mono text-sm text-indigo-700">
+                        <span>GET /api/especialidades</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                    <a href="/api/cachorros" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg flex justify-between items-center font-mono text-sm text-indigo-700">
+                        <span>GET /api/cachorros</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                    <a href="/api/gatos" target="_blank" class="p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg flex justify-between items-center font-mono text-sm text-indigo-700">
+                        <span>GET /api/gatos</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    </a>
+                    <a href="/h2-console" target="_blank" class="p-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg flex justify-between items-center font-mono text-sm text-amber-800">
+                        <span>H2 Console (Banco)</span>
+                        <i class="fa-solid fa-database text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL 1: ADICIONAR TUTOR -->
+    <div id="modal-tutor" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-user text-indigo-600"></i> Novo Tutor (Herda de Pessoa)
+            </h3>
+            <form onsubmit="salvarTutor(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome Completo *</label>
+                    <input id="tutor-nome" required class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">CPF *</label>
+                    <input id="tutor-cpf" required placeholder="000.000.000-00" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone</label>
+                        <input id="tutor-telefone" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">E-mail</label>
+                        <input id="tutor-email" type="email" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Endereço Residencial</label>
+                    <input id="tutor-endereco" class="w-full border rounded-lg p-2 text-sm">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="fecharModalTutor()" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Salvar Tutor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADICIONAR ESPECIALIDADE -->
+    <div id="modal-esp" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-stethoscope text-indigo-600"></i> Nova Especialidade
+            </h3>
+            <form onsubmit="salvarEsp(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome da Especialidade *</label>
+                    <input id="esp-nome" required placeholder="Ex: Oftalmologia, Ortopedia..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Descrição</label>
+                    <textarea id="esp-descricao" rows="3" placeholder="Descrição do campo de atuação..." class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="fecharModalEsp()" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Salvar Especialidade</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: ADICIONAR VETERINÁRIO -->
+    <div id="modal-vet" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-user-doctor text-indigo-600"></i> Novo Veterinário (Herda de Pessoa)
+            </h3>
+            <form onsubmit="salvarVet(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome Completo *</label>
+                    <input id="vet-nome" required class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">CPF *</label>
+                        <input id="vet-cpf" required placeholder="000.000.000-00" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">CRMV *</label>
+                        <input id="vet-crmv" required placeholder="SP-12345" class="w-full border rounded-lg p-2 text-sm font-mono">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone</label>
+                        <input id="vet-telefone" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">E-mail</label>
+                        <input id="vet-email" type="email" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Vincular Especialidades (Cardinalidade N:N)</label>
+                    <div id="vet-especialidades-checks" class="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-lg border max-h-36 overflow-y-auto text-xs">
+                        <!-- Gerado dinamicamente -->
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="fecharModalVet()" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Salvar Veterinário</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: ADICIONAR PET AO TUTOR (1:N) -->
+    <div id="modal-pet" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-paw text-indigo-600"></i> Adicionar Pet (Herança de Animal)
+            </h3>
+            <p id="pet-tutor-nome" class="text-xs text-indigo-600 font-semibold mb-4"></p>
+            <form onsubmit="salvarPet(event)" class="space-y-3">
+                <input type="hidden" id="pet-tutor-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tipo de Animal (Herança)</label>
+                    <select id="pet-tipo" onchange="alternarCamposPet()" class="w-full border rounded-lg p-2 text-sm font-semibold">
+                        <option value="cachorro">🐶 Cachorro (Cachorro extends Animal)</option>
+                        <option value="gato">🐱 Gato (Gato extends Animal)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Pet *</label>
+                    <input id="pet-nome" required class="w-full border rounded-lg p-2 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Idade (anos)</label>
+                        <input id="pet-idade" type="number" min="0" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Peso (kg)</label>
+                        <input id="pet-peso" type="number" step="0.1" min="0" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                </div>
+
+                <!-- Campos específicos de Cachorro -->
+                <div id="campos-cachorro" class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Raça</label>
+                        <input id="pet-raca" placeholder="Ex: Labrador" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Porte</label>
+                        <select id="pet-porte" class="w-full border rounded-lg p-2 text-sm">
+                            <option value="Pequeno">Pequeno</option>
+                            <option value="Médio" selected>Médio</option>
+                            <option value="Grande">Grande</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Campos específicos de Gato -->
+                <div id="campos-gato" class="grid grid-cols-2 gap-2 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Pelagem</label>
+                        <input id="pet-pelagem" placeholder="Ex: Curta, Siamês" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    <div class="flex items-center pt-5">
+                        <label class="inline-flex items-center text-xs font-semibold text-slate-700 cursor-pointer">
+                            <input id="pet-castrado" type="checkbox" class="rounded border-slate-300 text-indigo-600 shadow-sm mr-2 w-4 h-4">
+                            É castrado?
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="fecharModalPet()" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Vincular Pet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts da Aplicação -->
+    <script>
+        let especialidadesCache = [];
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-indigo-600', 'text-indigo-600');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            const activeContent = document.getElementById(`content-${tab}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-slate-500');
+                activeBtn.classList.add('border-indigo-600', 'text-indigo-600');
+            }
+            if (activeContent) activeContent.classList.remove('hidden');
+
+            if (tab === 'tutores') carregarTutores();
+            if (tab === 'veterinarios') carregarVeterinarios();
+            if (tab === 'especialidades') carregarEspecialidades();
+        }
+
+        // ==================== TUTORES & PETS ====================
+        async function carregarTutores() {
+            try {
+                const res = await fetch('/api/tutores');
+                const tutores = await res.json();
+                const container = document.getElementById('lista-tutores');
+                if (!tutores || tutores.length === 0) {
+                    container.innerHTML = '<div class="col-span-2 p-8 text-center text-slate-400 bg-white rounded-xl border border-dashed">Nenhum tutor cadastrado. Clique em "Novo Tutor".</div>';
+                    return;
+                }
+                container.innerHTML = tutores.map(t => `
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-900">${t.nome}</h3>
+                                    <span class="text-xs font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded">CPF: ${t.cpf}</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="abrirModalPet(${t.id}, '${t.nome}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-2.5 py-1 rounded-lg border border-indigo-200 transition" title="Adicionar Pet a este Tutor">
+                                        <i class="fa-solid fa-plus mr-1"></i> Pet
+                                    </button>
+                                    <button onclick="deletarTutor(${t.id})" class="text-red-500 hover:text-red-700 text-sm p-1.5" title="Excluir Tutor">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-500 space-y-1 mb-4">
+                                <p><i class="fa-solid fa-phone mr-1"></i> ${t.telefone || 'Sem telefone'}</p>
+                                <p><i class="fa-solid fa-envelope mr-1"></i> ${t.email || 'Sem e-mail'}</p>
+                                <p><i class="fa-solid fa-location-dot mr-1"></i> ${t.endereco || 'Sem endereço'}</p>
+                            </div>
+                            <div class="border-t border-slate-100 pt-3">
+                                <h4 class="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-paw"></i> Pets Associados (1:N) [${t.animais ? t.animais.length : 0}]</span>
+                                </h4>
+                                <div class="space-y-1.5">
+                                    ${(t.animais && t.animais.length > 0) ? t.animais.map(a => `
+                                        <div class="flex items-center justify-between bg-slate-50 px-2.5 py-1.5 rounded-lg text-xs">
+                                            <span class="font-semibold text-slate-700">${a.nome} (${a.idade !== null ? a.idade : '?'} anos, ${a.peso !== null ? a.peso : '?'}kg)</span>
+                                            <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${a.raca ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                                                ${a.raca ? `🐶 Cão (${a.raca})` : `🐱 Gato (${a.pelagem || 'comum'})`}
+                                            </span>
+                                        </div>
+                                    `).join('') : '<p class="text-xs text-slate-400 italic">Nenhum animal vinculado. Clique em "+ Pet" acima.</p>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ==================== VETERINÁRIOS ====================
+        async function carregarVeterinarios() {
+            try {
+                const res = await fetch('/api/veterinarios');
+                const vets = await res.json();
+                const container = document.getElementById('lista-veterinarios');
+                if (!vets || vets.length === 0) {
+                    container.innerHTML = '<div class="col-span-2 p-8 text-center text-slate-400 bg-white rounded-xl border border-dashed">Nenhum veterinário cadastrado.</div>';
+                    return;
+                }
+                container.innerHTML = vets.map(v => `
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="font-bold text-lg text-slate-900">${v.nome}</h3>
+                                    <span class="text-xs font-mono bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded">CRMV: ${v.crmv}</span>
+                                </div>
+                                <button onclick="deletarVet(${v.id})" class="text-red-500 hover:text-red-700 text-sm p-1.5" title="Excluir Veterinário">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="text-xs text-slate-500 space-y-1 mb-4">
+                                <p><i class="fa-solid fa-id-card mr-1"></i> CPF: ${v.cpf}</p>
+                                <p><i class="fa-solid fa-phone mr-1"></i> ${v.telefone || 'Sem telefone'}</p>
+                                <p><i class="fa-solid fa-envelope mr-1"></i> ${v.email || 'Sem e-mail'}</p>
+                            </div>
+                            <div class="border-t border-slate-100 pt-3">
+                                <h4 class="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                    <i class="fa-solid fa-stethoscope"></i> Especialidades (N:N) [${v.especialidades ? v.especialidades.length : 0}]
+                                </h4>
+                                <div class="flex flex-wrap gap-1.5">
+                                    ${(v.especialidades && v.especialidades.length > 0) ? v.especialidades.map(e => `
+                                        <span class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full font-medium">
+                                            ${e.nome}
+                                        </span>
+                                    `).join('') : '<p class="text-xs text-slate-400 italic">Nenhuma especialidade associada.</p>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ==================== ESPECIALIDADES ====================
+        async function carregarEspecialidades() {
+            try {
+                const res = await fetch('/api/especialidades');
+                const esps = await res.json();
+                especialidadesCache = esps;
+                const tbody = document.getElementById('tabela-especialidades');
+                if (!esps || esps.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Nenhuma especialidade cadastrada.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = esps.map(e => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-4 font-mono text-slate-500 font-bold">#${e.id}</td>
+                        <td class="p-4 font-semibold text-slate-800">${e.nome}</td>
+                        <td class="p-4 text-slate-500">${e.descricao || '-'}</td>
+                        <td class="p-4 text-right">
+                            <button onclick="deletarEsp(${e.id})" class="text-red-500 hover:text-red-700 p-1" title="Excluir">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ==================== MODAIS E SUBMISSÕES ====================
+
+        // Modal Tutor
+        function abrirModalTutor() {
+            document.getElementById('modal-tutor').classList.remove('hidden');
+            document.getElementById('modal-tutor').classList.add('flex');
+        }
+        function fecharModalTutor() {
+            document.getElementById('modal-tutor').classList.add('hidden');
+            document.getElementById('modal-tutor').classList.remove('flex');
+        }
+        async function salvarTutor(e) {
+            e.preventDefault();
+            const payload = {
+                nome: document.getElementById('tutor-nome').value,
+                cpf: document.getElementById('tutor-cpf').value,
+                telefone: document.getElementById('tutor-telefone').value,
+                email: document.getElementById('tutor-email').value,
+                endereco: document.getElementById('tutor-endereco').value
+            };
+            const res = await fetch('/api/tutores', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                fecharModalTutor();
+                e.target.reset();
+                carregarTutores();
+            } else {
+                alert('Erro ao salvar tutor. Verifique se o CPF já existe.');
+            }
+        }
+
+        // Modal Especialidade
+        function abrirModalEsp() {
+            document.getElementById('modal-esp').classList.remove('hidden');
+            document.getElementById('modal-esp').classList.add('flex');
+        }
+        function fecharModalEsp() {
+            document.getElementById('modal-esp').classList.add('hidden');
+            document.getElementById('modal-esp').classList.remove('flex');
+        }
+        async function salvarEsp(e) {
+            e.preventDefault();
+            const payload = {
+                nome: document.getElementById('esp-nome').value,
+                descricao: document.getElementById('esp-descricao').value
+            };
+            const res = await fetch('/api/especialidades', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                fecharModalEsp();
+                e.target.reset();
+                carregarEspecialidades();
+            } else {
+                alert('Erro ao salvar especialidade.');
+            }
+        }
+
+        // Modal Veterinário
+        async function abrirModalVet() {
+            // Atualizar lista de especialidades para seleção no checkbox
+            if (especialidadesCache.length === 0) {
+                const res = await fetch('/api/especialidades');
+                especialidadesCache = await res.json();
+            }
+            const checksContainer = document.getElementById('vet-especialidades-checks');
+            if (especialidadesCache.length === 0) {
+                checksContainer.innerHTML = '<p class="col-span-2 text-slate-400 italic">Nenhuma especialidade cadastrada ainda.</p>';
+            } else {
+                checksContainer.innerHTML = especialidadesCache.map(esp => `
+                    <label class="flex items-center gap-2 p-1.5 bg-white border rounded cursor-pointer hover:bg-slate-50">
+                        <input type="checkbox" name="vet-esp" value="${esp.id}" class="rounded text-indigo-600">
+                        <span class="text-xs text-slate-700 font-medium">${esp.nome}</span>
+                    </label>
+                `).join('');
+            }
+            document.getElementById('modal-vet').classList.remove('hidden');
+            document.getElementById('modal-vet').classList.add('flex');
+        }
+        function fecharModalVet() {
+            document.getElementById('modal-vet').classList.add('hidden');
+            document.getElementById('modal-vet').classList.remove('flex');
+        }
+        async function salvarVet(e) {
+            e.preventDefault();
+            const selecionadas = Array.from(document.querySelectorAll('input[name="vet-esp"]:checked')).map(el => ({ id: parseInt(el.value) }));
+            const payload = {
+                nome: document.getElementById('vet-nome').value,
+                cpf: document.getElementById('vet-cpf').value,
+                crmv: document.getElementById('vet-crmv').value,
+                telefone: document.getElementById('vet-telefone').value,
+                email: document.getElementById('vet-email').value,
+                especialidades: selecionadas
+            };
+            const res = await fetch('/api/veterinarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                fecharModalVet();
+                e.target.reset();
+                carregarVeterinarios();
+            } else {
+                alert('Erro ao salvar veterinário. Verifique se CRMV ou CPF já existem.');
+            }
+        }
+
+        // Modal Pet
+        function abrirModalPet(tutorId, tutorNome) {
+            document.getElementById('pet-tutor-id').value = tutorId;
+            document.getElementById('pet-tutor-nome').textContent = `Tutor: ${tutorNome} (ID #${tutorId})`;
+            alternarCamposPet();
+            document.getElementById('modal-pet').classList.remove('hidden');
+            document.getElementById('modal-pet').classList.add('flex');
+        }
+        function fecharModalPet() {
+            document.getElementById('modal-pet').classList.add('hidden');
+            document.getElementById('modal-pet').classList.remove('flex');
+        }
+        function alternarCamposPet() {
+            const tipo = document.getElementById('pet-tipo').value;
+            if (tipo === 'cachorro') {
+                document.getElementById('campos-cachorro').classList.remove('hidden');
+                document.getElementById('campos-gato').classList.add('hidden');
+            } else {
+                document.getElementById('campos-cachorro').classList.add('hidden');
+                document.getElementById('campos-gato').classList.remove('hidden');
+            }
+        }
+        async function salvarPet(e) {
+            e.preventDefault();
+            const tutorId = document.getElementById('pet-tutor-id').value;
+            const tipo = document.getElementById('pet-tipo').value;
+            const nome = document.getElementById('pet-nome').value;
+            const idade = document.getElementById('pet-idade').value ? parseInt(document.getElementById('pet-idade').value) : null;
+            const peso = document.getElementById('pet-peso').value ? parseFloat(document.getElementById('pet-peso').value) : null;
+
+            let endpoint = '';
+            let payload = { nome, idade, peso };
+
+            if (tipo === 'cachorro') {
+                endpoint = `/api/cachorros?tutorId=${tutorId}`;
+                payload.raca = document.getElementById('pet-raca').value;
+                payload.porte = document.getElementById('pet-porte').value;
+            } else {
+                endpoint = `/api/gatos?tutorId=${tutorId}`;
+                payload.pelagem = document.getElementById('pet-pelagem').value;
+                payload.castrado = document.getElementById('pet-castrado').checked;
+            }
+
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                fecharModalPet();
+                e.target.reset();
+                carregarTutores();
+            } else {
+                alert('Erro ao vincular pet ao tutor.');
+            }
+        }
+
+        // ==================== DELETAR ====================
+        async function deletarTutor(id) {
+            if (!confirm('Deseja realmente excluir este tutor? (Seus animais associados também serão excluídos)')) return;
+            await fetch(`/api/tutores/${id}`, { method: 'DELETE' });
+            carregarTutores();
+        }
+        async function deletarVet(id) {
+            if (!confirm('Deseja realmente excluir este veterinário?')) return;
+            await fetch(`/api/veterinarios/${id}`, { method: 'DELETE' });
+            carregarVeterinarios();
+        }
+        async function deletarEsp(id) {
+            if (!confirm('Deseja realmente excluir esta especialidade?')) return;
+            await fetch(`/api/especialidades/${id}`, { method: 'DELETE' });
+            carregarEspecialidades();
+        }
+
+        // Inicializar
+        carregarTutores();
+        carregarEspecialidades();
+    </script>
+</body>
+</html>
